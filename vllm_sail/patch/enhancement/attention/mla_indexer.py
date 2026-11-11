@@ -5,8 +5,9 @@
 
 The fork's changes, translated to plugin patches:
 
-* Two module-level constants added by the fork (``PPU_DEEP_GEMM_TB_PER_CU``,
-  ``PPU_FP4_INDEXER_ELEMENT_SIZE``) — installed with ``patch_value``.
+* Module-level constants added by the fork (``PPU_DEEP_GEMM_TB_PER_CU``,
+  ``PPU_FP4_INDEXER_QK_DTYPE``, ``PPU_FP8_INDEXER_QK_DTYPE``) — installed with
+  ``patch_value``.
 * The fork's import switch (``vllm.utils.ppu_deep_gemm`` instead of
   ``vllm.utils.deep_gemm`` under ``is_ppu()``) affects two names.
   ``has_deep_gemm`` needs no patch: ``vllm_sail.utils.deep_gemm`` re-exports the
@@ -66,12 +67,28 @@ patch_value(
 
 patch_value(
     _MODULE,
-    "PPU_FP4_INDEXER_ELEMENT_SIZE",
-    1,
+    "PPU_FP4_INDEXER_QK_DTYPE",
+    torch.int8,
     allow_missing=True,
     reason=(
-        "Fork constant: element size (bytes) of the PPU fp4 indexer cache, "
-        "passed to the PPU paged MQA logits metadata builder via metadata_extra."
+        "Fork constant: qk_dtype entry of the metadata_extra tuple the PPU "
+        "paged MQA logits metadata builder requires. On M890 torch.int8 denotes "
+        "packed MXFP4, not integer arithmetic; DeepGEMM reads it together with "
+        "the device arch and rejects an integer byte size here."
+    ),
+    affected_versions=_AFFECTED,
+    remove_when="upstream defines the constant itself (patch_value becomes a no-op).",
+)
+
+patch_value(
+    _MODULE,
+    "PPU_FP8_INDEXER_QK_DTYPE",
+    torch.float8_e4m3fn,
+    allow_missing=True,
+    reason=(
+        "Fork constant: qk_dtype entry of the metadata_extra tuple for the "
+        "legacy FP8 DSA indexer on M890, which DeepGEMM documents as "
+        "torch.float8_e4m3fn rather than the MXFP4 torch.int8."
     ),
     affected_versions=_AFFECTED,
     remove_when="upstream defines the constant itself (patch_value becomes a no-op).",
@@ -283,12 +300,12 @@ def _builder_init_body(self, *args, block_table_width: int, **kwargs) -> None:
     )
     self.indexer_uses_fp4 = dsa_indexer_uses_fp4(self.vllm_config)
     # PPU MODIFICATION: begin
-    self.indexer_n_head = (
-        self.kv_cache_spec.indexer_n_head or 0 if self.indexer_uses_fp4 else 0
-    )
-    self.indexer_q_head_dim = (
-        self.kv_cache_spec.indexer_q_head_dim or 0 if self.indexer_uses_fp4 else 0
-    )
+    # DeepGEMM's metadata_extra is mandatory for every paged metadata call and
+    # carries the indexer's real head geometry, so it is read for the legacy FP8
+    # indexer as well as the MXFP4 one; zeroing it here would leave build() with
+    # no tuple to pass.
+    self.indexer_n_head = self.kv_cache_spec.indexer_n_head or 0
+    self.indexer_q_head_dim = self.kv_cache_spec.indexer_q_head_dim or 0
     # PPU MODIFICATION: end
 
     next_n = self.num_speculative_tokens + 1
@@ -787,7 +804,9 @@ def _build_body(
                 seq_lens.shape[1],
                 self.indexer_n_head,
                 self.indexer_q_head_dim,
-                PPU_FP4_INDEXER_ELEMENT_SIZE,
+                PPU_FP4_INDEXER_QK_DTYPE
+                if self.indexer_uses_fp4
+                else PPU_FP8_INDEXER_QK_DTYPE,
             )
         scheduler_metadata = None
         n = self.scheduler_metadata_buffer.shape[0]
@@ -855,7 +874,7 @@ patch(
         "Fork's DSA indexer build path for PPU: pass logits_dtype to the "
         "prefill chunk splitter, and build PPU paged-MQA-logits scheduler "
         "metadata with the metadata_extra tuple (next_n, indexer_n_head, "
-        "indexer_q_head_dim, PPU_FP4_INDEXER_ELEMENT_SIZE), slicing the "
+        "indexer_q_head_dim, qk_dtype), slicing the "
         "scheduler buffer to the returned size. Verbatim body with only the "
         "fork's changes marked."
     ),

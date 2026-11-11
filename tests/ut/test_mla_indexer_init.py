@@ -32,7 +32,10 @@ def test_indexer_reserves_only_decode_capacity(
     class Parent:
         def __init__(self, config):
             self.vllm_config = config
-            self.kv_cache_spec = object()
+            # The constructor reads the indexer geometry off the spec for every
+            # backend now, since metadata_extra is mandatory on PPU; ``None``
+            # keeps the ``or 0`` default this stub relied on when it was unread.
+            self.kv_cache_spec = NS(indexer_n_head=None, indexer_q_head_dim=None)
             self.device = NS(index=0)
 
     class Builder(Parent):
@@ -70,6 +73,8 @@ def test_indexer_reserves_only_decode_capacity(
         int32="int32",
         int64="int64",
         float32="float32",
+        int8="int8",
+        float8_e4m3fn="float8_e4m3fn",
     )
     platform = NS(is_ppu=lambda: False)
     modules("vllm.platforms", current_platform=platform)

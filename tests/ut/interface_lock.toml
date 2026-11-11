@@ -11,7 +11,7 @@
 schema = 1
 vllm_version_range = ">=0.32.0,<0.33.0"
 key_interface_count = 10
-target_count = 286
+target_count = 294
 
 [[key_interface]]
 symbol = "vllm.platforms.interface.PlatformEnum"
@@ -1866,6 +1866,62 @@ present = true
 fingerprint = "sha256:c5dc07e066663f901158504cc053d9a716ab64c0e4b3c0049558f0479f30d7d3"
 
 [[patch_target]]
+name = "vllm.models.qwen4_exp.common.qsa_indexer.QSACompressedKeyCache.__init__"
+kind = "class"
+module = "vllm/models/qwen4_exp/common/qsa_indexer.py"
+symbol = "QSACompressedKeyCache.__init__"
+present = false
+fingerprint = ""
+
+[[patch_target]]
+name = "vllm.models.qwen4_exp.common.qsa_indexer.QSAIndexerBackend.get_supported_kernel_block_sizes"
+kind = "class"
+module = "vllm/models/qwen4_exp/common/qsa_indexer.py"
+symbol = "QSAIndexerBackend.get_supported_kernel_block_sizes"
+present = false
+fingerprint = ""
+
+[[patch_target]]
+name = "vllm.models.qwen4_exp.nvidia.ops.qsa_indexer.qsa_select_paged_decode"
+kind = "module"
+module = "vllm/models/qwen4_exp/nvidia/ops/qsa_indexer.py"
+symbol = "qsa_select_paged_decode"
+present = true
+fingerprint = "sha256:66e581619b32d60a6553857d88af84acd9abd560126562a77a446dd7fe768ad6"
+
+[[patch_target]]
+name = "vllm.models.qwen4_exp.nvidia.ops.qsa_indexer.qsa_select_paged_prefill"
+kind = "module"
+module = "vllm/models/qwen4_exp/nvidia/ops/qsa_indexer.py"
+symbol = "qsa_select_paged_prefill"
+present = true
+fingerprint = "sha256:e001c148e5abe17dfe4ccd7084c50dd7c985509cc57f182a4bdebe30073ad470"
+
+[[patch_target]]
+name = "vllm.models.qwen4_exp.nvidia.ops.qsa_indexer.warmup_qsa_mqa_paged_decode"
+kind = "module"
+module = "vllm/models/qwen4_exp/nvidia/ops/qsa_indexer.py"
+symbol = "warmup_qsa_mqa_paged_decode"
+present = true
+fingerprint = "sha256:b860b11c655afc183f794377fb166a0b7368f76ed79bf197d4a8a6db418c3184"
+
+[[patch_target]]
+name = "vllm.models.qwen4_exp.nvidia.ops.qsa_prepare.qsa_prepare"
+kind = "module"
+module = "vllm/models/qwen4_exp/nvidia/ops/qsa_prepare.py"
+symbol = "qsa_prepare"
+present = true
+fingerprint = "sha256:571413ad25cd85f61d8d3960f4d274b2cb728b83c0a19930fa8fffeccafd3e40"
+
+[[patch_target]]
+name = "vllm.models.qwen4_exp.nvidia.qsa_indexer.qsa_prepare"
+kind = "module"
+module = "vllm/models/qwen4_exp/nvidia/qsa_indexer.py"
+symbol = "qsa_prepare"
+present = true
+fingerprint = "sha256:17d0959901a2dbcc2b5186fe091764c60349f12a74dda160159fbc853ee896ba"
+
+[[patch_target]]
 name = "vllm.platforms.interface.Platform.is_ppu"
 kind = "class"
 module = "vllm/platforms/interface.py"
@@ -2154,10 +2210,18 @@ present = false
 fingerprint = ""
 
 [[patch_target]]
-name = "vllm.v1.attention.backends.mla.indexer.PPU_FP4_INDEXER_ELEMENT_SIZE"
+name = "vllm.v1.attention.backends.mla.indexer.PPU_FP4_INDEXER_QK_DTYPE"
 kind = "value"
 module = "vllm/v1/attention/backends/mla/indexer.py"
-symbol = "PPU_FP4_INDEXER_ELEMENT_SIZE"
+symbol = "PPU_FP4_INDEXER_QK_DTYPE"
+present = false
+fingerprint = ""
+
+[[patch_target]]
+name = "vllm.v1.attention.backends.mla.indexer.PPU_FP8_INDEXER_QK_DTYPE"
+kind = "value"
+module = "vllm/v1/attention/backends/mla/indexer.py"
+symbol = "PPU_FP8_INDEXER_QK_DTYPE"
 present = false
 fingerprint = ""
 
